@@ -4,6 +4,7 @@ set -euo pipefail
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${SELF}")" && pwd -P)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
+VERSION_FILE="${PROJECT_ROOT}/VERSION"
 
 AGENTS_DIR="${HOME}/.config/opencode/agents"
 PLUGINS_DIR="${HOME}/.config/opencode/plugins"
@@ -45,6 +46,7 @@ Commands:
 
   doctor               Validate installation, agents, plugins and models
   status               Show the current JP OpenCode installation
+  version              Show the JP OpenCode and OpenCode versions
   agents               Show installed JP agents grouped by family
   models               Show the configured JP model map
 
@@ -111,6 +113,23 @@ command_status() {
         printf '%s\n' '✓ Data'
     else
         printf '%s\n' '✗ Data'
+    fi
+}
+
+command_version() {
+    local jp_version='unknown'
+
+    if [[ -f "${VERSION_FILE}" ]]; then
+        jp_version="$(<"${VERSION_FILE}")"
+        [[ -n "${jp_version}" ]] || jp_version='unknown'
+    fi
+
+    printf 'jp-opencode %s\n' "${jp_version}"
+
+    if command -v opencode >/dev/null 2>&1; then
+        printf 'OpenCode %s\n' "$(opencode --version 2>/dev/null || printf '%s' 'unknown')"
+    else
+        printf '%s\n' 'OpenCode not installed'
     fi
 }
 
@@ -557,6 +576,10 @@ case "${1:-help}" in
 
     status)
         command_status
+        ;;
+
+    version)
+        command_version
         ;;
 
     agents)

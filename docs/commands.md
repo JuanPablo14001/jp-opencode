@@ -130,6 +130,20 @@ Useful for checking:
 
 ---
 
+# `jp-opencode version`
+
+Display the current JP OpenCode version and, when available, the installed
+OpenCode version.
+
+```bash
+jp-opencode version
+```
+
+The JP OpenCode version is read from the `VERSION` file in the repository
+root.
+
+---
+
 # `jp-opencode agents`
 
 List installed JP agents.
@@ -420,6 +434,7 @@ Agent and plugin modifications must be reinstalled into the global OpenCode conf
 | `jp-opencode uninstall` | Remove managed JP files |
 | `jp-opencode doctor` | Validate the installation |
 | `jp-opencode status` | Show installation status |
+| `jp-opencode version` | Show JP OpenCode and OpenCode versions |
 | `jp-opencode agents` | List installed agents |
 | `jp-opencode models` | Show model assignments |
 | `jp-opencode logs` | Show recent observability events |

@@ -453,6 +453,187 @@ If you have uncommitted changes, commit, stash, or discard them before updating.
 
 ---
 
+# Update Mechanics
+
+This section explains the internal behavior of `jp-opencode update`.
+
+## Pre-update checks
+
+Before pulling changes, the updater verifies four conditions:
+
+1. **Git availability** — the `git` command must be in PATH;
+2. **Repository context** — the JP OpenCode root must be inside a Git work tree;
+3. **Clean working tree** — `git status --porcelain` must return empty output;
+4. **Active branch** — the repository must be on a named branch, not in detached HEAD state.
+
+Any failure aborts the update with a specific error message and exits.
+
+## Pull strategy
+
+The updater runs:
+
+```bash
+git pull --ff-only
+```
+
+The `--ff-only` flag means:
+
+- the pull succeeds only if the local branch can be fast-forwarded to the remote;
+- if a merge commit would be required, the pull fails and the update aborts.
+
+This ensures the local history stays linear and avoids unexpected merge conflicts during automated reinstallation.
+
+## Reinstallation
+
+After a successful pull, the updater calls `scripts/install.sh`.
+
+This means the same installation logic runs during both first install and update:
+
+- agents are reinstalled from the repository to `~/.config/opencode/agents/`;
+- plugins are reinstalled from the repository to `~/.config/opencode/plugins/`;
+- the CLI symlink is recreated or validated;
+- the installation manifest is rebuilt.
+
+If any file changed between the previous and current versions, the installer creates a backup before overwriting.
+
+---
+
+## Backup behavior
+
+Backups are created during both fresh installation and update.
+
+### When backups are created
+
+A backup is created when:
+
+- a target file already exists **and** its content differs from the source file;
+- the CLI target exists as a regular file or a symlink pointing to a different source.
+
+### When backups are skipped
+
+No backup is created when:
+
+- the target file does not exist (fresh install for that file);
+- the target file has identical content to the source (verified with `cmp -s`);
+- the CLI symlink already points to the current repository source.
+
+### Backup location
+
+All backups are stored under:
+
+```text
+~/.local/state/jp-opencode/backups/install-YYYYMMDD-HHMMSS/
+```
+
+Each install or update run creates at most one backup directory, named with a timestamp.
+
+### Backup contents
+
+A backup directory may contain any combination of:
+
+- agent files (`agent-<name>.md`);
+- plugin files (`plugin-<name>.ts`);
+- CLI script entry (`jp-opencode-cli`).
+
+If no files need backup, no directory is created at all.
+
+### Backup lifecycle
+
+Backups are:
+
+- created automatically during install and update;
+- never deleted automatically during uninstall;
+- never deleted automatically during normal operation;
+- preserved intentionally to allow manual recovery if a new version introduces issues.
+
+---
+
+## Installation manifest
+
+The installation manifest records every file managed by JP OpenCode.
+
+### Location
+
+```text
+~/.local/state/jp-opencode/install-manifest.txt
+```
+
+### Contents
+
+The manifest contains one file path per line, including:
+
+- all installed agent files in `~/.config/opencode/agents/`;
+- all installed plugin files in `~/.config/opencode/plugins/`;
+- the CLI symlink entry at `~/.local/bin/jp-opencode` (the link target is the repository's `bin/jp-opencode`).
+
+### How it is built
+
+During each install or update run:
+
+1. the installer writes installed paths to a temporary file;
+2. on successful completion, the temporary file replaces the previous manifest atomically (via `mv`);
+3. if the installer fails mid-run, the previous manifest remains untouched.
+
+This prevents a partial installation from corrupting the manifest used by uninstall.
+
+### How uninstall uses it
+
+The uninstaller reads the manifest line by line and:
+
+- removes agent files matching `~/.config/opencode/agents/jp-*.md`;
+- removes plugin files matching `~/.config/opencode/plugins/jp-*.ts`;
+- removes the CLI symlink at `~/.local/bin/jp-opencode`;
+- skips any path that does not match these patterns.
+
+Unrecognized paths in the manifest are reported to stderr but not removed.
+
+After processing, the manifest file itself is deleted.
+
+---
+
+## CLI symlink
+
+The CLI is available as a symbolic link at:
+
+```text
+~/.local/bin/jp-opencode
+```
+
+### Symlink creation
+
+During install or update, the installer:
+
+1. runs `chmod +x` on the repository source (`<repo>/bin/jp-opencode`);
+2. checks whether the target path already exists;
+3. if the existing target is a symlink pointing to the same source, no backup is created;
+4. if the existing target is a different symlink or a regular file, it is backed up first;
+5. creates the symlink with `ln -sfn`, which:
+   - removes the existing file or symlink if present (`-f`);
+   - creates a symbolic link (`-s`);
+   - does not follow the target when creating (`-n`).
+
+### Link target
+
+The symlink always points to the repository source file:
+
+```text
+<repository>/bin/jp-opencode
+```
+
+This means:
+
+- development changes to the repository CLI are immediately available;
+- no recompilation or separate copy step is needed;
+- the installed command always runs the latest version of the CLI script.
+
+### Resolving the repository root
+
+The CLI script resolves its own location by following the symlink chain with `readlink -f`. It then computes the repository root as the parent directory of `bin/`.
+
+This allows the CLI to find agents, plugins, scripts, and other repository resources regardless of where the symlink is located.
+
+---
+
 # Uninstall
 
 Run:
