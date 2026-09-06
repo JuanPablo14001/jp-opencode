@@ -1,0 +1,524 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "${SELF}")" && pwd -P)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
+
+AGENTS_DIR="${HOME}/.config/opencode/agents"
+PLUGINS_DIR="${HOME}/.config/opencode/plugins"
+
+STATE_DIR="${HOME}/.local/state/jp-opencode"
+LOG_DIR="${STATE_DIR}/logs"
+MANIFEST="${STATE_DIR}/install-manifest.txt"
+
+EVENT_LOG="${LOG_DIR}/events.jsonl"
+TOOL_LOG="${LOG_DIR}/tools.jsonl"
+ROUTING_LOG="${LOG_DIR}/routing.jsonl"
+
+OBSERVABILITY_PLUGIN="${PLUGINS_DIR}/jp-observability.ts"
+STATS_SCRIPT="${PROJECT_ROOT}/scripts/stats.py"
+
+print_header() {
+    printf '%s\n' 'JP OpenCode'
+    printf '%s\n\n' '==========='
+}
+
+print_section() {
+    local title="$1"
+
+    printf '%s\n' "${title}"
+    printf '%*s\n' "${#title}" '' | tr ' ' '-'
+}
+
+command_help() {
+    print_header
+
+    cat <<'EOF'
+Usage:
+  jp-opencode <command> [options]
+
+Commands:
+  install              Install or refresh JP OpenCode
+  update               Pull the latest repository changes and reinstall
+  uninstall            Remove installed JP OpenCode files
+
+  doctor               Validate installation, agents, plugins and models
+  status               Show the current JP OpenCode installation
+  agents               Show installed JP agents grouped by family
+  models               Show the configured JP model map
+
+  logs                 Show recent local observability events
+
+  stats                Show general usage statistics
+  stats models         Show usage by model
+  stats agents         Show usage and escalation rates by agent
+  stats providers      Show usage by provider
+  stats escalations    Show Lite escalation rates and destinations
+
+  help                 Show this help
+
+Orchestrators:
+  jp-code-orchestrator   Software development orchestration
+  jp-data-orchestrator   Data analysis orchestration (coming next)
+EOF
+}
+
+command_status() {
+    print_header
+
+    if command -v opencode >/dev/null 2>&1; then
+        printf 'OpenCode:      installed (%s)\n' "$(opencode --version)"
+    else
+        printf '%s\n' 'OpenCode:      not found'
+    fi
+
+    if [[ -f "${MANIFEST}" ]]; then
+        printf '%s\n' 'JP config:     installed'
+        printf 'Manifest:      %s\n' "${MANIFEST}"
+    else
+        printf '%s\n' 'JP config:     not installed through manifest'
+    fi
+
+    if command -v jp-opencode >/dev/null 2>&1; then
+        printf 'CLI:           %s\n' "$(command -v jp-opencode)"
+    else
+        printf '%s\n' 'CLI:           not found in PATH'
+    fi
+
+    if [[ -f "${OBSERVABILITY_PLUGIN}" ]]; then
+        printf '%s\n' 'Observability: installed'
+    else
+        printf '%s\n' 'Observability: not installed'
+    fi
+
+    if [[ -f "${ROUTING_LOG}" ]]; then
+        printf 'Routing log:   %s\n' "${ROUTING_LOG}"
+    else
+        printf '%s\n' 'Routing log:   no data yet'
+    fi
+
+    printf '\n'
+    print_section "Orchestrators"
+
+    if [[ -f "${AGENTS_DIR}/jp-code-orchestrator.md" ]]; then
+        printf '%s\n' '✓ Code'
+    else
+        printf '%s\n' '✗ Code'
+    fi
+
+    if [[ -f "${AGENTS_DIR}/jp-data-orchestrator.md" ]]; then
+        printf '%s\n' '✓ Data'
+    else
+        printf '%s\n' '- Data (not installed yet)'
+    fi
+}
+
+command_agents() {
+    print_header
+
+    if [[ ! -d "${AGENTS_DIR}" ]]; then
+        printf '%s\n' 'No OpenCode agents directory found.'
+        exit 0
+    fi
+
+    print_section "Orchestrators"
+
+    for agent in \
+        jp-code-orchestrator \
+        jp-data-orchestrator
+    do
+        if [[ -f "${AGENTS_DIR}/${agent}.md" ]]; then
+            printf '✓ %s\n' "${agent}"
+        fi
+    done
+
+    printf '\n'
+    print_section "Code agents"
+
+    local code_agents=(
+        jp-explorer-lite
+        jp-explorer
+        jp-architect
+        jp-designer-lite
+        jp-designer
+        jp-coder-lite
+        jp-coder
+        jp-coder-heavy
+        jp-reviewer-lite
+        jp-reviewer
+        jp-documenter-lite
+        jp-documenter
+        jp-tester
+    )
+
+    local found=false
+
+    for agent in "${code_agents[@]}"; do
+        if [[ -f "${AGENTS_DIR}/${agent}.md" ]]; then
+            printf '✓ %s\n' "${agent}"
+            found=true
+        fi
+    done
+
+    if [[ "${found}" == false ]]; then
+        printf '%s\n' 'No Code agents installed.'
+    fi
+
+    printf '\n'
+    print_section "Data agents"
+
+    local data_agents=(
+        jp-data-explorer-lite
+        jp-data-explorer
+        jp-data-analyst
+        jp-sql-lite
+        jp-sql
+        jp-data-coder-lite
+        jp-data-coder
+        jp-data-reviewer-lite
+        jp-data-reviewer
+        jp-data-documenter-lite
+        jp-data-documenter
+        jp-data-tester
+    )
+
+    found=false
+
+    for agent in "${data_agents[@]}"; do
+        if [[ -f "${AGENTS_DIR}/${agent}.md" ]]; then
+            printf '✓ %s\n' "${agent}"
+            found=true
+        fi
+    done
+
+    if [[ "${found}" == false ]]; then
+        printf '%s\n' 'Not implemented yet.'
+    fi
+}
+
+command_models() {
+    print_header
+
+    print_section "Code profile"
+
+    cat <<'EOF'
+Orchestrator
+  opencode-go/gpt-5.6-luna
+
+Exploration
+  Lite: opencode/muse-spark-1.3-contributor-free
+  Full: opencode-go/deepseek-v4-pro
+
+Architecture
+  openai/gpt-5.6-sol
+
+Design
+  Lite: opencode-go/qwen3.8-flash
+  Full: opencode-go/glm-5.3
+
+Coding
+  Lite:  opencode-go/qwen3.8-flash
+  Full:  opencode-go/kimi-k2.7-code
+  Heavy: openai/gpt-5.6-terra-fast
+
+Review
+  Lite: opencode/mimo-v2.5-free
+  Full: opencode-go/gpt-5.6-luna
+
+Documentation
+  Lite: opencode/mimo-v2.5-free
+  Full: opencode-go/qwen3.7-plus
+
+Testing
+  opencode/muse-spark-1.3-contributor-free
+EOF
+
+    printf '\n'
+    print_section "Data profile"
+    printf '%s\n' 'Not configured yet.'
+}
+
+command_logs() {
+    print_header
+
+    print_section "Recent routing events"
+
+    if [[ -f "${ROUTING_LOG}" ]]; then
+        tail -n 30 "${ROUTING_LOG}"
+    else
+        printf '%s\n' 'No routing events recorded yet.'
+    fi
+
+    printf '\n'
+    print_section "Recent session events"
+
+    if [[ -f "${EVENT_LOG}" ]]; then
+        tail -n 10 "${EVENT_LOG}"
+    else
+        printf '%s\n' 'No session events recorded yet.'
+    fi
+
+    printf '\n'
+    print_section "Recent tool events"
+
+    if [[ -f "${TOOL_LOG}" ]]; then
+        tail -n 10 "${TOOL_LOG}"
+    else
+        printf '%s\n' 'No tool events recorded yet.'
+    fi
+}
+
+command_stats() {
+    local section="${1:-summary}"
+
+    print_header
+
+    if [[ ! -f "${STATS_SCRIPT}" ]]; then
+        printf 'ERROR: stats script not found: %s\n' "${STATS_SCRIPT}" >&2
+        return 1
+    fi
+
+    if ! command -v python3 >/dev/null 2>&1; then
+        printf '%s\n' 'ERROR: python3 is required for statistics.' >&2
+        return 1
+    fi
+
+    case "${section}" in
+        summary|models|agents|providers|escalations)
+            python3 "${STATS_SCRIPT}" "${section}"
+            ;;
+
+        *)
+            printf 'Unknown stats section: %s\n\n' "${section}" >&2
+            printf '%s\n' 'Available sections:'
+            printf '%s\n' '  models'
+            printf '%s\n' '  agents'
+            printf '%s\n' '  providers'
+            printf '%s\n' '  escalations'
+            return 1
+            ;;
+    esac
+}
+
+command_doctor() {
+    print_header
+
+    local failures=0
+    local warnings=0
+
+    print_section "OpenCode"
+
+    if command -v opencode >/dev/null 2>&1; then
+        printf '✓ installed: %s\n' "$(opencode --version)"
+    else
+        printf '%s\n' '✗ OpenCode not found'
+        failures=$((failures + 1))
+    fi
+
+    printf '\n'
+    print_section "Installation"
+
+    if [[ -d "${AGENTS_DIR}" ]]; then
+        printf '%s\n' '✓ agents directory'
+    else
+        printf '%s\n' '✗ agents directory missing'
+        failures=$((failures + 1))
+    fi
+
+    if [[ -d "${PLUGINS_DIR}" ]]; then
+        printf '%s\n' '✓ plugins directory'
+    else
+        printf '%s\n' '✗ plugins directory missing'
+        failures=$((failures + 1))
+    fi
+
+    if [[ -f "${MANIFEST}" ]]; then
+        printf '%s\n' '✓ installation manifest'
+    else
+        printf '%s\n' '! installation manifest missing'
+        warnings=$((warnings + 1))
+    fi
+
+    if command -v jp-opencode >/dev/null 2>&1; then
+        printf '%s\n' '✓ CLI available'
+    else
+        printf '%s\n' '! CLI not available in PATH'
+        warnings=$((warnings + 1))
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        printf '✓ python3: %s\n' "$(python3 --version 2>&1)"
+    else
+        printf '%s\n' '! python3 unavailable; stats commands will not work'
+        warnings=$((warnings + 1))
+    fi
+
+    printf '\n'
+    print_section "Observability"
+
+    if [[ -f "${OBSERVABILITY_PLUGIN}" ]]; then
+        printf '%s\n' '✓ jp-observability plugin'
+    else
+        printf '%s\n' '✗ jp-observability plugin missing'
+        failures=$((failures + 1))
+    fi
+
+    if [[ -d "${LOG_DIR}" ]]; then
+        printf '✓ logs directory: %s\n' "${LOG_DIR}"
+    else
+        printf '%s\n' '! logs directory missing'
+        warnings=$((warnings + 1))
+    fi
+
+    if [[ -f "${STATS_SCRIPT}" ]]; then
+        printf '%s\n' '✓ statistics engine'
+    else
+        printf '%s\n' '✗ statistics engine missing'
+        failures=$((failures + 1))
+    fi
+
+    printf '\n'
+    print_section "Orchestrators"
+
+    if [[ -f "${AGENTS_DIR}/jp-code-orchestrator.md" ]]; then
+        printf '%s\n' '✓ jp-code-orchestrator'
+    else
+        printf '%s\n' '✗ jp-code-orchestrator'
+        failures=$((failures + 1))
+    fi
+
+    if [[ -f "${AGENTS_DIR}/jp-data-orchestrator.md" ]]; then
+        printf '%s\n' '✓ jp-data-orchestrator'
+    else
+        printf '%s\n' '- jp-data-orchestrator not installed yet'
+    fi
+
+    printf '\n'
+    print_section "Code agents"
+
+    local required_code_agents=(
+        jp-explorer-lite
+        jp-explorer
+        jp-architect
+        jp-designer-lite
+        jp-designer
+        jp-coder-lite
+        jp-coder
+        jp-coder-heavy
+        jp-reviewer-lite
+        jp-reviewer
+        jp-documenter-lite
+        jp-documenter
+        jp-tester
+    )
+
+    for agent in "${required_code_agents[@]}"; do
+        if [[ -f "${AGENTS_DIR}/${agent}.md" ]]; then
+            printf '✓ %s\n' "${agent}"
+        else
+            printf '✗ %s\n' "${agent}"
+            failures=$((failures + 1))
+        fi
+    done
+
+    printf '\n'
+    print_section "Models"
+
+    local required_models=(
+        opencode-go/gpt-5.6-luna
+        opencode/muse-spark-1.3-contributor-free
+        opencode-go/deepseek-v4-pro
+        openai/gpt-5.6-sol
+        opencode-go/qwen3.8-flash
+        opencode-go/glm-5.3
+        opencode-go/kimi-k2.7-code
+        openai/gpt-5.6-terra-fast
+        opencode/mimo-v2.5-free
+        opencode-go/qwen3.7-plus
+    )
+
+    if command -v opencode >/dev/null 2>&1; then
+        local models
+        models="$(opencode models 2>/dev/null || true)"
+
+        for model in "${required_models[@]}"; do
+            if grep -Fxq "${model}" <<< "${models}"; then
+                printf '✓ %s\n' "${model}"
+            else
+                printf '✗ %s\n' "${model}"
+                failures=$((failures + 1))
+            fi
+        done
+    else
+        printf '%s\n' 'Unable to inspect models.'
+    fi
+
+    printf '\n'
+    print_section "Summary"
+
+    if [[ "${failures}" -eq 0 ]]; then
+        printf '%s' '✓ Ready'
+
+        if [[ "${warnings}" -gt 0 ]]; then
+            printf ' with %d warning(s)' "${warnings}"
+        fi
+
+        printf '.\n'
+        return 0
+    fi
+
+    printf '✗ %d failure(s), %d warning(s).\n' \
+        "${failures}" \
+        "${warnings}"
+
+    return 1
+}
+
+case "${1:-help}" in
+    install)
+        "${PROJECT_ROOT}/scripts/install.sh"
+        ;;
+
+    update)
+        "${PROJECT_ROOT}/scripts/update.sh"
+        ;;
+
+    uninstall)
+        "${PROJECT_ROOT}/scripts/uninstall.sh"
+        ;;
+
+    doctor)
+        command_doctor
+        ;;
+
+    status)
+        command_status
+        ;;
+
+    agents)
+        command_agents
+        ;;
+
+    models)
+        command_models
+        ;;
+
+    logs)
+        command_logs
+        ;;
+
+    stats)
+        command_stats "${2:-summary}"
+        ;;
+
+    help|-h|--help)
+        command_help
+        ;;
+
+    *)
+        printf 'Unknown command: %s\n\n' "${1}" >&2
+        command_help
+        exit 1
+        ;;
+esac
