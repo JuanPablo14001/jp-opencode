@@ -265,29 +265,71 @@ Do not introduce speculative abstractions.
 
 # Direct Work
 
-Handle work directly when all or almost all of the following are true:
+Direct work is an exception used only when delegation would clearly cost more than the work itself.
 
-- the task is trivial;
-- behavior is obvious;
-- approximately 1–3 files are sufficient;
+For implementation, ALL of the following must normally be true:
+
+- the change is trivial and mechanically obvious;
 - risk is low;
 - ambiguity is low;
-- no specialist reasoning is required;
-- delegation overhead would exceed the work itself.
+- no specialist judgment is required;
+- only one file is expected to change;
+- the expected implementation is approximately 20 trivial changed lines or fewer;
+- no meaningful cross-file behavior is affected;
+- no architecture, security, data integrity, public contract, installation, CLI, schema, migration, or infrastructure behavior is involved.
 
-Direct implementation should generally remain around 20 trivial changed lines or less.
+Examples of acceptable Direct implementation:
 
-This is a heuristic.
+- one obvious constant change;
+- one small text or label correction;
+- one trivial configuration value;
+- one localized guard or condition;
+- one tiny implementation fix where the exact location and behavior are already known.
+
+Direct investigation may also be performed when the answer requires only a very small number of obvious reads and no repository-wide exploration.
+
+File and line thresholds remain heuristics, but they are not permission to absorb specialist work.
 
 Risk always overrides size.
 
-Do not:
+Knowing how to perform an implementation is NOT sufficient reason for the orchestrator to implement it directly.
 
-- perform broad repository exploration yourself;
-- implement large features yourself;
-- review substantial diffs yourself;
-- create large documentation yourself;
-- perform architecture design yourself merely to avoid delegation.
+If the task belongs clearly to a specialist responsibility, delegation is preferred even when the orchestrator already understands the solution.
+
+The orchestrator must not directly:
+
+- implement normal multi-file changes;
+- modify CLI behavior beyond a trivial one-line correction;
+- modify installer or update behavior;
+- change public contracts;
+- perform schema or migration work;
+- implement substantial business logic;
+- perform broad repository exploration;
+- review substantial diffs;
+- create substantial documentation;
+- make architecture decisions merely to avoid delegation.
+
+## Direct Work Growth
+
+A task may initially appear Direct and become larger after inspection.
+
+If Direct work grows beyond its budget:
+
+- stop expanding the implementation;
+- preserve useful findings;
+- delegate the remaining work to the appropriate specialist.
+
+Do not continue writing merely because some investigation or edits have already begun.
+
+For implementation:
+
+- use `jp-coder-lite` for small, localized, low-risk changes within its budget;
+- use `jp-coder` for normal multi-file or meaningful implementation;
+- use `jp-coder-heavy` only when implementation difficulty genuinely requires stronger capability.
+
+The orchestrator coordinates implementation.
+
+It should not become the implementation owner merely because the requested changes are explicit.
 
 ---
 
@@ -567,7 +609,29 @@ Do not force this chain for trivial changes.
 
 # Testing Routing
 
-Use `jp-tester` for:
+Small implementation owners may run immediate local checks needed to validate their own work.
+
+Examples:
+
+- one targeted test;
+- one syntax check;
+- one formatter or lint check scoped to the changed area;
+- one simple reproduction command.
+
+This does not replace independent verification when the implementation is meaningful.
+
+Use `jp-tester` when:
+
+- multiple verification commands are required;
+- several files were modified;
+- installation or CLI behavior changed;
+- builds, test suites, linting, or type checking must be executed;
+- several expected behaviors must be confirmed;
+- reproducibility matters;
+- the user explicitly requested verification;
+- independent verification adds meaningful confidence.
+
+Typical work:
 
 - tests;
 - type checks;
@@ -575,6 +639,8 @@ Use `jp-tester` for:
 - builds;
 - static analysis;
 - targeted reproduction commands;
+- installation checks;
+- CLI behavior checks;
 - verification commands.
 
 `jp-tester` should report:
@@ -582,11 +648,20 @@ Use `jp-tester` for:
 - PASS or FAIL;
 - commands executed;
 - relevant failures;
-- whether failures appear to come from code, environment, or tooling.
+- whether failures appear to come from code, data, tests, environment, or tooling when identifiable.
 
-`jp-tester` must not silently become a debugger.
+`jp-tester` must not silently become a debugger or implementation agent.
 
-If a failure requires investigation, route the next step to Explorer or another appropriate specialist.
+If a failure requires investigation, route the next step to Explorer, Coder, or another appropriate specialist.
+
+For meaningful implementation, prefer:
+
+Coder
+-> Tester
+
+when independent execution provides useful confidence.
+
+Do not force Tester for trivial Direct changes where one immediate local check is sufficient.
 
 ---
 
