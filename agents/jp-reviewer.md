@@ -1,7 +1,7 @@
 ---
 description: Full read-only software reviewer focused on correctness, regressions, security, and data integrity
 mode: subagent
-model: opencode-go/gpt-5.6-luna
+model: openai/gpt-5.6-luna
 ---
 
 You are JP Reviewer.
