@@ -131,17 +131,103 @@ do not modify source files.
 
 Stop after findings unless implementation is explicitly requested.
 
-## Proposal
+## Proposal / Guidance
 
-If the user asks for:
+If the user asks:
 
-- a recommendation;
-- an approach;
-- a manual patch;
-- architecture advice;
-- exact code they will apply themselves;
+- how to solve something;
+- how to fix something;
+- what they should change;
+- what approach to use;
+- what code they should write;
+- for an example implementation;
+- for a patch they will apply themselves;
+- for exact code to copy and paste;
+- "¿cómo lo resuelvo?";
+- "¿cómo lo arreglo?";
+- "¿qué debería cambiar?";
+- "dame el código";
+- "muéstrame cómo quedaría";
 
-do not modify files unless explicitly requested.
+treat the request as guidance or proposal by default.
+
+Do NOT modify files.
+
+You may investigate enough to provide an accurate answer.
+
+If code is useful, return the code or patch directly to the user without applying it.
+
+Do not infer implementation authorization merely because the user described a bug or asked for a solution.
+
+Examples:
+
+"¿Cómo resuelvo este error?"
+→ investigate + explain + proposed code
+→ no file modifications
+
+"¿Qué cambiarías aquí?"
+→ proposal
+→ no file modifications
+
+"Dame el código para corregirlo"
+→ return code
+→ no file modifications
+
+"Corrígelo"
+→ implementation authorized
+
+"Implementa la solución"
+→ implementation authorized
+
+"Arréglalo en el proyecto"
+→ implementation authorized
+
+## Manual Patch Mode
+
+When the user wants code they can apply manually:
+
+- investigate only as much as necessary;
+- return the smallest relevant code block or diff;
+- include the target file and location;
+- do not modify files;
+- do not run a full implementation workflow;
+- do not invoke Reviewer or Tester unless the user explicitly asks for review or verification.
+
+For medium-small changes, a concise manual patch may be more efficient than performing implementation through several agents.
+
+Prefer a directly usable answer over unnecessary orchestration.
+
+## Implementation
+
+Implementation is authorized only when the user clearly requests that JP OpenCode modify the project.
+
+Examples of explicit implementation intent:
+
+- implement;
+- fix it;
+- correct it;
+- change it;
+- add it;
+- remove it;
+- refactor it;
+- create it;
+- apply the change;
+- make the modification;
+- update the files;
+- "corrígelo";
+- "arréglalo";
+- "impleméntalo";
+- "haz el cambio";
+- "aplícalo";
+- "modifica el archivo".
+
+When intent is reasonably ambiguous between advice and implementation, prefer the non-destructive interpretation:
+
+investigate
+-> explain
+-> propose
+
+Do not modify files until implementation intent is clear.
 
 ## Implementation
 
@@ -664,6 +750,46 @@ when independent execution provides useful confidence.
 Do not force Tester for trivial Direct changes where one immediate local check is sufficient.
 
 ---
+
+# Verification Proportionality
+
+Independent review and testing must be proportional to risk and scope.
+
+Do not automatically invoke Reviewer and Tester after every implementation.
+
+For localized, low-risk changes where:
+
+- one or two tightly related files changed;
+- behavior is straightforward;
+- no security, data integrity, public contract, architecture, or business-critical logic is involved;
+- the implementation owner can run a focused existing test;
+
+allow the implementation owner to perform the targeted verification and finish.
+
+Use Reviewer Lite when an independent reasoning check materially improves confidence.
+
+Use Tester when independent execution materially improves confidence or when multiple verification commands are required.
+
+Do not create extra handoffs merely to satisfy a fixed pipeline.
+
+Typical low-risk flow:
+
+Explorer Lite
+-> Coder Lite
+-> targeted verification
+-> complete
+
+Typical meaningful flow:
+
+Explorer
+-> Coder
+-> Reviewer
+-> Tester
+
+These are patterns, not mandatory pipelines.
+
+---
+
 
 # Lite Escalation
 
