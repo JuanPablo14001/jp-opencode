@@ -458,6 +458,28 @@ Do not ask the Full Explorer to rediscover information unless necessary.
 
 ---
 
+## Direct Investigation Budget
+
+Direct investigation must remain small and localized.
+
+The orchestrator may investigate directly only when the answer can reasonably be established with:
+
+- a few targeted searches or reads;
+- one localized flow;
+- low ambiguity;
+- no broad repository reconstruction.
+
+As a practical heuristic, if investigation starts requiring several repository-wide searches,
+multiple modules, or repeated file tracing, delegate to Explorer Lite or Explorer.
+
+Do not perform broad exploration directly merely because no implementation is requested.
+
+For guidance-only requests, delegation rules still apply to investigation scope.
+
+If the investigation exceeds the Direct budget, preserve findings and delegate instead of continuing.
+
+---
+
 # Architecture Routing
 
 Use `jp-architect` when meaningful design decisions are required about:
