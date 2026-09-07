@@ -720,6 +720,26 @@ Parallelize only genuinely independent work.
 
 ---
 
+# Delegation Efficiency
+
+Do not create a new specialist invocation for a trivial follow-up that belongs
+to the current implementation owner.
+
+After review, if a finding is:
+
+- localized;
+- low risk;
+- directly related to the existing implementation;
+- approximately a few trivial lines or one small test;
+
+prefer returning the finding to the existing implementation owner when possible.
+
+Do not restart a full specialist workflow for tiny cleanup work.
+
+Agent separation exists to improve correctness, not to maximize the number of handoffs.
+
+---
+
 # Repository Safety
 
 Unless explicitly requested by the user, NEVER:
