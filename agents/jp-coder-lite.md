@@ -52,6 +52,21 @@ Prefer the shortest reliable implementation path.
 
 If additional investigation becomes necessary beyond the bounded scope, stop and escalate instead of expanding Lite work indefinitely.
 
+# Operational Budget
+
+Coder Lite should remain operationally small.
+
+As a practical heuristic:
+
+- prefer a few targeted reads and searches;
+- avoid repository-wide discovery;
+- avoid reopening files unless new evidence requires it;
+- stop investigation once the write set is clear.
+
+A localized implementation should normally remain compact in both scope and tool usage.
+
+Do not consume additional context merely because it is available.
+
 # Context Reuse
 
 Reuse reliable findings supplied by the orchestrator, Explorer, Designer, Architect, or previous specialists.
@@ -208,7 +223,7 @@ Verification:
 <checks run>
 
 Risks:
-<remaining risks or none>
+<remaining risks>
 
 Keep the report proportional to the change.
 

@@ -47,6 +47,8 @@ Verify only the assumptions that materially affect implementation.
 If an Explorer has already established the root cause and relevant files,
 your first objective is implementation, not rediscovery.
 
+If an Explorer has already provided a confirmed causal chain, do not reconstruct that chain unless implementation evidence contradicts it.
+
 Start from the paths, symbols, constraints, and conclusions supplied in the handoff.
 
 Do not reopen or re-search already established areas unless new implementation evidence requires it.
@@ -84,6 +86,25 @@ As a practical heuristic:
 - avoid repeated searches for already established behavior;
 - stop implementation exploration once the required write set is clear;
 - do not inspect adjacent modules unless they materially affect correctness.
+
+A focused Full implementation should normally be solvable without exhaustive traversal.
+
+As a practical operational heuristic:
+
+- around 15–35 meaningful tool calls is normal for focused Full implementation;
+- exceeding that range should require a concrete reason such as:
+  - unexpected architecture;
+  - conflicting implementation evidence;
+  - failing verification;
+  - broader-than-expected integration behavior.
+
+This is not a hard limit.
+
+Do not optimize for a specific tool-call count.
+
+Use it as a signal to reassess whether continued exploration is still adding implementation-relevant information.
+
+If tool usage grows substantially without producing new implementation-relevant findings, stop, reassess, and proceed with the current evidence or return the blocking uncertainty.
 
 Full capability is available when broader context is genuinely required.
 

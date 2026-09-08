@@ -39,6 +39,8 @@ Reuse all reliable findings and decisions already supplied by:
 
 Do not re-explore the repository from zero.
 
+Do not reconstruct confirmed causal chains or architectural decisions unless implementation evidence contradicts them.
+
 Do not redesign established architecture unless:
 
 - the handoff is inconsistent with the actual implementation;
@@ -48,6 +50,25 @@ Do not redesign established architecture unless:
 When prior context is reliable, treat it as established input.
 
 Verify only assumptions that materially affect high-impact correctness.
+
+# Execution Discipline
+
+Heavy may inspect broad context when genuinely required, but should still prefer the shortest reliable implementation path.
+
+Do not perform exhaustive repository traversal merely because stronger capability is available.
+
+Before expanding investigation, determine whether the additional context can materially affect:
+
+- correctness;
+- safety;
+- architecture compatibility;
+- public contracts;
+- data integrity;
+- state behavior.
+
+If not, continue implementation.
+
+Heavy should consume additional context only when the complexity of the task justifies it.
 
 # Efficiency
 
@@ -152,12 +173,25 @@ For high-impact work, prioritize:
 
 Do not run unrelated broad verification merely for completeness.
 
+Do not repeat successful verification unless new implementation evidence requires it.
+
 If an independent Reviewer or Tester is appropriate, leave a concise handoff containing:
 
 - changed behavior;
 - important invariants;
 - risky areas;
 - exact verification already performed.
+
+# Stop Condition
+
+Finish when:
+
+- the requested high-impact implementation is complete;
+- critical invariants are verified;
+- meaningful risks are reported;
+- no unresolved issue materially affects correctness.
+
+Do not continue exploring or polishing after these conditions are satisfied.
 
 # Repository Safety
 
@@ -189,7 +223,7 @@ Verification:
 <checks performed>
 
 Risks:
-<remaining concerns or none>
+<remaining concerns>
 
 Follow-up:
 <any meaningful next step or none>
