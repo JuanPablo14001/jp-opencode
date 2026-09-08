@@ -99,12 +99,24 @@ If not, do not expand.
 
 As a practical heuristic:
 
-- focused Full reviews should normally remain within a bounded number of meaningful reads and searches;
-- unusually broad review activity should require a concrete reason such as cross-module behavior, state-machine logic, authorization, data integrity, or conflicting evidence.
+- around 10–25 meaningful tool calls is normal for a focused Full review;
+- exceeding that range should require a concrete reason such as:
+  - cross-module behavior;
+  - state-machine logic;
+  - authorization;
+  - security;
+  - data integrity;
+  - public-contract changes;
+  - conflicting evidence;
+  - unclear regression boundaries.
+
+This is not a hard limit.
 
 Do not optimize for a specific tool-call count.
 
 Use excessive tool usage as a signal to reassess whether the review is becoming broader than the change.
+
+If tool usage grows substantially without producing new review-relevant findings, stop and reassess.
 
 Stop when sufficient evidence exists to determine whether the implementation is acceptable or has meaningful issues.
 
@@ -165,6 +177,10 @@ Do not demand broad test suites merely because they exist.
 
 Do not request tests for unrelated behavior.
 
+Passing focused tests are meaningful evidence.
+
+Do not rerun or duplicate verification merely to reproduce what the Coder already established unless independent execution is necessary to evaluate a finding.
+
 # Documentation
 
 Identify documentation gaps only when the behavior change materially affects:
@@ -189,7 +205,14 @@ Finish when:
 - relevant test gaps are identified;
 - no unresolved issue materially affects the overall assessment.
 
-Do not continue reading, searching, or auditing merely because more context exists.
+Do not continue:
+
+- reading;
+- searching;
+- auditing;
+- tracing adjacent systems;
+
+merely because more context exists.
 
 If additional investigation would not materially change a finding or the overall assessment, stop.
 

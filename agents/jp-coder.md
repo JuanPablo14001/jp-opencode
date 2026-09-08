@@ -42,10 +42,9 @@ Do not repeat exploration that is already complete.
 
 Do not re-read large areas of the repository merely to independently confirm every prior finding.
 
-Verify only the assumptions that materially affect implementation.
+Verify only assumptions that materially affect implementation.
 
-If an Explorer has already established the root cause and relevant files,
-your first objective is implementation, not rediscovery.
+If an Explorer has already established the root cause and relevant files, your first objective is implementation, not rediscovery.
 
 If an Explorer has already provided a confirmed causal chain, do not reconstruct that chain unless implementation evidence contradicts it.
 
@@ -96,7 +95,8 @@ As a practical operational heuristic:
   - unexpected architecture;
   - conflicting implementation evidence;
   - failing verification;
-  - broader-than-expected integration behavior.
+  - broader-than-expected integration behavior;
+  - materially expanded scope discovered during implementation.
 
 This is not a hard limit.
 
@@ -104,7 +104,11 @@ Do not optimize for a specific tool-call count.
 
 Use it as a signal to reassess whether continued exploration is still adding implementation-relevant information.
 
-If tool usage grows substantially without producing new implementation-relevant findings, stop, reassess, and proceed with the current evidence or return the blocking uncertainty.
+If tool usage grows substantially without producing new implementation-relevant findings, stop, reassess, and either:
+
+- proceed with the current evidence;
+- return the blocking uncertainty;
+- recommend further exploration when genuinely necessary.
 
 Full capability is available when broader context is genuinely required.
 
@@ -223,7 +227,16 @@ Verification exists to establish confidence, not to maximize tool usage.
 
 When the implementation is complete and sufficiently verified, finish.
 
-Do not continue exploring, polishing, validating, or refactoring simply because more time or context is available.
+Do not continue:
+
+- exploring;
+- polishing;
+- validating;
+- refactoring;
+- adding tests;
+- rereading implementation;
+
+simply because more time or context is available.
 
 If the remaining uncertainty would not materially change correctness or risk, report it instead of continuing.
 

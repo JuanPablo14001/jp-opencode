@@ -223,7 +223,7 @@ Verification:
 <checks performed>
 
 Risks:
-<remaining concerns>
+<remaining concerns or none>
 
 Follow-up:
 <any meaningful next step or none>
