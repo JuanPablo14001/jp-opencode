@@ -85,7 +85,15 @@ Avoid:
 - tracing unrelated callers;
 - inspecting adjacent modules without a correctness reason.
 
-If tool usage keeps growing without changing the implementation approach, stop and reassess whether the task should escalate to Full or simply be completed with the evidence already available.
+When approaching the upper end of the expected tool budget, perform a checkpoint:
+
+- Is the write set already known?
+- Is the implementation approach already clear?
+- Is new investigation changing the solution?
+
+If the task is already understood, implement and finish.
+
+If complexity has genuinely expanded, escalate.
 
 Do not consume additional context merely because it is available.
 
@@ -119,6 +127,24 @@ Independent verification of every prior finding is unnecessary.
 If supplied findings conflict with the actual code, verify the conflict and report it.
 
 Do not restart repository exploration from zero.
+
+# Decision Discipline
+
+When the implementation path is sufficiently clear, choose the smallest viable approach and implement it.
+
+Do not spend substantial context comparing multiple hypothetical implementation strategies.
+
+Prefer:
+
+1. identify the simplest compatible approach;
+2. verify its critical assumption;
+3. implement;
+4. run focused verification;
+5. correct only if verification provides contrary evidence.
+
+Do not enumerate alternative designs unless the current architecture leaves a real decision unresolved.
+
+For Lite work, prolonged implementation design is itself a sign that the task may no longer be Lite.
 
 # Risk Override
 
@@ -190,6 +216,22 @@ Verification should increase confidence, not maximize tool usage.
 If one focused check sufficiently verifies the change, stop.
 
 Do not create additional verification work merely because more commands are available.
+
+# Failed Fix Boundary
+
+If the user reports that a previous implementation did not change the observed behavior, do not keep modifying the same implementation based on the same hypothesis.
+
+Treat the failed result as new evidence.
+
+Before modifying again:
+
+- identify what the previous fix assumed;
+- verify that the files and components being modified actually own the observed behavior;
+- confirm that the relevant runtime or render path passes through the implementation being changed.
+
+If this requires broader tracing, escalate instead of continuing as Lite.
+
+Do not strengthen or polish a failed fix merely because it compiled successfully.
 
 # Stop Condition
 
